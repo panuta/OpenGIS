@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}เข้าสู่ระบบ : {{ block.super }}{% endblock %}
+
+{% block html_head %}
+<link rel="stylesheet" type="text/css" href="{{MEDIA_URL}}/css/min.base-form.css">
+<style type="text/css">.SS_RememberMeOption {color:#555;}</style>
+{% endblock %}
+
+{% block content %}
+<div class="SS_Standard_Page">
+	<h1>เข้าสู่ระบบ</h1>
+
+	<div class="SS_Form_TableContainer">
+		<form action="." method="POST">
+			{% if form.errors %}<div class="SSI_FormErrorMessage">ชื่อผู้ใช้และรหัสผ่านไม่สัมพันธ์กัน ไม่สามารถเข้าสู่ระบบได้</div>{% endif %}
+			{% if next %}<div class="SSI_FormErrorMessage">กรุณาเข้าสู่ระบบก่อน</div>{% endif %}
+		
+			<table>
+				<tr>
+					<td class="SSI_LabelPanel">ชื่อผู้ใช้:</td>
+					<td class="SSI_InputPanel INPUT_Textbox_Medium">{{form.username}} <div class="form_input_error">{{ form.username.errors }}</div></td>
+				</tr>
+				<tr>
+					<td class="SSI_LabelPanel">รหัสผ่าน:</td>
+					<td class="SSI_InputPanel INPUT_Textbox_Medium">{{form.password}} <div class="form_input_error">{{ form.password.errors }}</div></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td class="SSI_InputPanel INPUT_Checkbox SS_RememberMeOption"><input type="checkbox" name="remember_me_option" id="ID_RememberMeOption"/> <label for="ID_RememberMeOption">จำสถานะการเข้าระบบของฉันไว้</label></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td class="SSI_ButtonPanel"><input type="submit" value="เข้าสู่ระบบ" class="SS_Standard_PrimaryButton"/> <a href="/accounts/password/reset/">ลืมรหัสผ่าน?</a></td>
+				</tr>
+			</table>
+			
+			{% if next %}<input type="hidden" name="next" value="{{next}}" />{% else %}<input type="hidden" name="next" value="" />{% endif %}
+		</form>
+	</div>
+</div>
+{% endblock %}

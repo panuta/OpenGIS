@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block html_head %}
+
+<script src="{{MEDIA_URL}}/openlayer/OpenLayers.js"></script>
+
+
+<script type="text/javascript">
+$(document).ready(function() {
+	var map = new OpenLayers.Map('map');
+	
+	map.addControl(new  OpenLayers.Control.LayerSwitcher());
+	map.addControl(new OpenLayers.Control.MousePosition());
+		
+	var wms = new OpenLayers.Layer.WMS("OpenLayers WMS", "http://labs.metacarta.com/wms/vmap0", {layers: 'basic'} );
+	map.addLayer(wms);
+	
+	vectors = new OpenLayers.Layer.Vector("Vector Layer");
+	var feature = new OpenLayers.Feature.Vector(
+		new OpenLayers.Geometry.Point(100, 13),
+		{some:'data'},
+		{externalGraphic: '{{MEDIA_URL}}/openlayer/img/marker.png', graphicHeight: 21, graphicWidth: 16}
+	);
+	vectors.addFeatures(feature);
+	map.addLayer(vectors);
+	
+	control = new OpenLayers.Control.DragFeature(vectors, {
+		onComplete: function(feature, pixel) {
+			console.log("drag complete");
+		}
+	});
+	map.addControl(control);
+	control.activate();
+	
+	map.setCenter(new OpenLayers.LonLat(100, 13), 5);
+	
+});
+</script>
+
+{% endblock %}
+
+{% block body_content %}
+<h1>Map</h1>
+<div style="width:700px; height:400px;" id="map"></div>
+{% endblock %}

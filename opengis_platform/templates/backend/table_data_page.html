@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block html_head %}
+<script src="{{MEDIA_URL}}/openlayer/OpenLayers.js"></script>
+
+<link rel="stylesheet" type="text/css" href="{{MEDIA_URL}}/extjs/resources/css/ext-all.css" />
+<script type="text/javascript" src="{{MEDIA_URL}}/extjs/adapter/ext/ext-base.js"></script>
+<script type="text/javascript" src="{{MEDIA_URL}}/extjs/ext-all.js"></script>
+
+<script type="text/javascript" src="{{MEDIA_URL}}/scripts/ext.openlayermappanel.js"></script>
+
+<script type="text/javascript">
+
+Ext.onReady(function(){
+	var cm = new Ext.grid.ColumnModel({
+		defaults: {sortable: true},
+		columns: [
+		{
+			id: 'name',
+			header: 'Name',
+			dataIndex: 'name',
+			width: 220,
+			editor: new Ext.form.TextField({
+				allowBlank: false
+			})
+		},
+		{
+			id: 'location',
+			header: 'Location',
+			dataIndex: 'location',
+			width: 220,
+			editor: new MapEditorField({
+			})
+		},
+		{
+			id: 'region',
+			header: 'Region',
+			dataIndex: 'region',
+			width: 220,
+			editor: new MapEditorField({
+			})
+		}]
+	});
+	
+	var store = new Ext.data.Store({
+		autoDestroy: true,
+		url: '{% url ajax_load_table_data 1 %}',
+		reader: new Ext.data.JsonReader()
+	});
+	
+	// create the editor grid
+	var grid = new Ext.grid.EditorGridPanel({
+		store: store,
+		cm: cm,
+		renderTo: 'editable-grid',
+		width: 600,
+		height: 300,
+		title: 'Edit Plants?',
+		frame: true,
+		clicksToEdit: 1
+	});
+	
+	grid.on('beforeedit', function(e) {
+		var ed = grid.getColumnModel().getCellEditor(e.column, e.row);
+		if(ed.field.is_map_editor) {
+			ed.field.parentGrid = grid;
+			ed.field.editingColumn = e.column;
+			ed.field.editingRow = e.row;
+			console.log("COL:" + ed.field.editingColumn + " ROW:" + ed.field.editingRow);
+		}
+	}, this);
+
+	store.load();
+});
+</script>
+
+{% endblock %}
+
+{% block body_content %}
+<h1>Table Name</h1>
+<div id="editable-grid"></div>
+<div id="window"></div>
+<div id="location-editor-window" class="x-hidden">
+	<div class="x-window-header">Edit Location</div>
+	<div style="width:700px; height:400px;" id="map"></div>
+</div>
+{% endblock %}

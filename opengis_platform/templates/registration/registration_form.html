@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}สมัครสมาชิก : {{ block.super }}{% endblock %}
+
+{% block html_head %}
+<link rel="stylesheet" type="text/css" href="{{MEDIA_URL}}/css/min.base-form.css">
+<style type="text/css">#recaptcha_widget_div table {width:auto;}</style>
+{% endblock %}
+
+{% block content %}
+<div class="SS_Standard_Page">
+	<h1>สมัครสมาชิก</h1>
+	<div class="SS_Form_TableContainer">
+		{% if has_prohibited_username %}<div style="color:#CC0000;margin:15px 0px;">ชื่อผู้ใช้นี้ได้ถูกใช้ในระบบงาน คุณไม่สามารถใช้ชื่อนี้ในการตั้งชื่อได้</div>{% endif %}
+		
+		<form action="." method="POST">
+			<table style="width:auto;">
+				<tr>
+					<td class="SSI_LabelPanel">ชื่อผู้ใช้:</td>
+					<td class="SSI_InputPanel INPUT_Textbox_Medium">{{form.username}}<div class="SSI_InputComment_Bottom">* ไม่เกิน 30 ตัวอักษร โดยต้องประกอบด้วยตัวอักษรภาษาอังกฤษ ตัวเลข หรือเครื่องหมาย "_" เท่านั้น</div><div class="SSI_ErrorMessage">{{ form.username.errors }}</div></td>
+				</tr>
+				<tr>
+					<td class="SSI_LabelPanel">อีเมล:</td>
+					<td class="SSI_InputPanel INPUT_Textbox_Medium">{{form.email}}<div class="SSI_ErrorMessage">{{ form.email.errors }}</div></td>
+				</tr>
+				<tr>
+					<td class="SSI_LabelPanel">รหัสผ่าน:</td>
+					<td class="SSI_InputPanel INPUT_Textbox_Medium">{{form.password1}}<div class="SSI_ErrorMessage">{{ form.password1.errors }}</div></td>
+				</tr>
+				<tr>
+					<td class="SSI_LabelPanel">ยืนยันรหัสผ่าน:</td>
+					<td class="SSI_InputPanel INPUT_Textbox_Medium">{{form.password2}}<div class="SSI_ErrorMessage">{{ form.password2.errors }}</div></td>
+				</tr>
+				<tr>
+					<td class="SSI_LabelPanel">กรอกตัวอักษรตามรูป:</td>
+					<td>
+						<div>
+							<script>var RecaptchaOptions = {theme : 'clean'};</script>
+							<script type="text/javascript" src="http://api.recaptcha.net/challenge?k=6LfXwwYAAAAAAMdVKFYvrM7lj5c2-Y763Z60EZft"></script>
+							<noscript>
+								<iframe src="http://api.recaptcha.net/noscript?k=6LfXwwYAAAAAAMdVKFYvrM7lj5c2-Y763Z60EZft" height="300" width="500" frameborder="0"></iframe><br>
+								<textarea name="recaptcha_challenge_field" rows="3" cols="40"></textarea>
+								<input type="hidden" name="recaptcha_response_field" value="manual_challenge">
+							</noscript>
+							<div class="SSI_ErrorMessage">{{captcha_error_message}}</div>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td class="SSI_ButtonPanel"><input type="submit" value="ลงทะเบียน" class="SS_Standard_PrimaryButton"/></td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</div>
+{% endblock %}

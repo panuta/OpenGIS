@@ -1,0 +1,1 @@
+﻿กรุณายืนยันการลงทะเบียนที่ {{ site }}/accounts/activate/{{ activation_key }}/

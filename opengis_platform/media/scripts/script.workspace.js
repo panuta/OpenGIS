@@ -298,47 +298,8 @@ function initializeDataGrid() {
 /*
 VIEW WORKSPACE VIEWPORT **************************************************************************************************
 */
-function initializeWorkspaceViewport1() {
-	
-	var dataGrid = initializeDataGrid();
-	
-	var viewport = new Ext.Viewport({
-		layout:'border',
-		cls: 'view_workspace_page',
-		
-		items: [{
-			/* NORTH */
-			region: 'north',
-			xtype: 'box',
-			applyTo: 'header',
-			height: 30
-		},{
-			/* WEST */
-			region: 'west',
-			contentEl: 'west',
-			layout: 'border',
-			border: false,
-			split: true,
-			width: 274,
-			minSize: 250,
-			margins: '0 0 5 5',
-			items: []
-		},{
-			/* CENTER */
-			region: 'center',
-			layout: 'border',
-			contentEl: 'center',
-			split: false,
-			border: false,
-			margins: '0 5 5 0'
-		}]
-		
-	});
-}
 
 function initializeWorkspaceViewport() {
-	var dataGrid = initializeDataGrid();
-	
 	var viewport = new Ext.Viewport({
 		layout:'border',
 		cls: 'view_workspace_page',

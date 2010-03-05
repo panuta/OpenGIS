@@ -1,0 +1,8 @@
+.view_workspace_page h1 {font-size:16px;margin:7px 0px 0px 5px;}
+
+.view_workspace_page .layer_item {font-size:1.2em;}
+.view_workspace_page .layer_item div {margin:5px 0px 3px;}
+.view_workspace_page .layer_item span {margin-left:5px;}
+
+.view_workspace_page .layer_item_modified {}
+.view_workspace_page .layer_item_modified span {font-style:italic;color:#960;}

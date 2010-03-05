@@ -4,6 +4,8 @@ _base = os.path.dirname(__file__)
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
+WEBSITE_ADDRESS = 'localhost:8000'
+
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
 )
@@ -48,6 +50,9 @@ MIDDLEWARE_CLASSES = (
 
 ROOT_URLCONF = 'opengis_platform.urls'
 
+AUTH_PROFILE_MODULE = 'domain.UserProfile'
+ACCOUNT_ACTIVATION_DAYS = 3
+
 TEMPLATE_DIRS = (
 	os.path.join(_base, "templates"),
 )
@@ -62,4 +67,5 @@ INSTALLED_APPS = (
     'opengis_platform.domain',
     'opengis_platform.frontend',
     'opengis_platform.backend',
+	'opengis_platform.workspace',
 )

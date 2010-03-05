@@ -10,9 +10,14 @@ admin.autodiscover()
 urlpatterns = patterns('',
 	(r'^backend/', include('opengis_platform.backend.urls')),
 	(r'^domain/', include('opengis_platform.domain.urls')),
+	(r'^workspace/', include('opengis_platform.workspace.urls')),
+	
+	(r'^accounts/', include('registration.backends.default.urls')),
 	
 	(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 	(r'^admin/', include(admin.site.urls)),
+	
+	
 )
 
 if settings.DEBUG:

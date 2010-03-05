@@ -1,8 +1,10 @@
+from django.contrib.auth.models import User
 from django.db import models
 
 # USER
 
 class UserProfile(models.Model):
+	user = models.ForeignKey(User, unique=True)
 	first_name = models.CharField(max_length=256)
 	last_name = models.CharField(max_length=256)
 
@@ -37,6 +39,9 @@ class TableColumnDescriptor(models.Model):
 	created = models.DateTimeField(auto_now_add=True)
 
 
+"""
+FOR TESTING
+"""
 from django.contrib.gis.db import models as gis_models
 
 class ThailandProvince(gis_models.Model):

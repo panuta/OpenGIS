@@ -1,14 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}ลงทะเบียน : {{ block.super }}{% endblock %}
-
 {% block html_head %}
-<link rel="stylesheet" type="text/css" href="{{MEDIA_URL}}/css/min.base.css">
 {% endblock %}
 
-{% block content %}
-<div class="SS_Standard_Page">
-	<h1>ลงทะเบียน</h1>
-	<div>ลงทะเบียนเสร็จสิ้น คุณสามารถเข้าสู่ระบบที่หน้า <a href="/accounts/login/">เข้าสู่ระบบ</a></div>
-</div>
+{% block body_content %}
+<h1>Register</h1>
+<div>Registration complete, log in at <a href="/accounts/login/">Login Page</a></div>
 {% endblock %}

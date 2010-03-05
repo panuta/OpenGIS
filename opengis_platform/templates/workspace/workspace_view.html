@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block html_head %}
+<script src="{{MEDIA_URL}}/openlayer/OpenLayers.js"></script>
+
+<link rel="stylesheet" type="text/css" href="{{MEDIA_URL}}/extjs/resources/css/ext-all.css" />
+<script type="text/javascript" src="{{MEDIA_URL}}/extjs/adapter/ext/ext-base.js"></script>
+<script type="text/javascript" src="{{MEDIA_URL}}/extjs/ext-all.js"></script>
+<link rel="stylesheet" type="text/css" href="{{MEDIA_URL}}/css/resources/css/ext-all.css" />
+
+<script type="text/javascript" src="{{MEDIA_URL}}/scripts/script.workspace.js"></script>
+
+<script type="text/javascript">
+Ext.onReady(function(){
+	
+	initializeWorkspaceViewport();
+	
+	/*
+	var viewport = new Ext.Viewport({
+		layout:'border',
+		cls: 'view_workspace_page',
+		items: [
+			{
+				xtype: 'box',
+				region: 'north',
+				applyTo: 'header',
+				height: 30
+			},{
+				region: 'west',
+				contentEl: 'west',
+				layout: 'border',
+				border: false,
+				split: true,
+				width: 274,
+				minSize: 250,
+				margins: '0 0 5 5',
+				
+				items: [{
+					region: 'north',
+					layout:'vbox',
+					width: 274,
+					height: 100,
+					layoutConfig: {
+						align:'stretch',
+						padding: '5 5 0 5'
+					},
+					defaults:{margins:'0 0 5 0'},
+					items: [{
+						xtype: 'button',
+						text: 'Drag Mode',
+						flex: 1,
+						enableToggle: true,
+						pressed: true,
+						toggleGroup: 'map_mode'
+					},{
+						xtype: 'button',
+						text: 'Edit Mode',
+						flex: 1,
+						enableToggle: true,
+						toggleGroup: 'map_mode'
+					},{
+						xtype: 'button',
+						text: 'Analyse Mode',
+						flex: 1,
+						enableToggle: true,
+						toggleGroup: 'map_mode'
+					}],
+					margins: '0 0 5 0'
+				},{
+					region: 'center',
+					layout: 'fit',
+					items: [grid],
+					tbar: [
+						new Ext.Toolbar.SplitButton({
+							text: 'Add Layer',
+							menu: [
+								{text: 'Add Layer from existing table'},
+								{text: 'Add Layer from new table'}
+							]
+						}),'-',{
+							text: 'Save'
+						},{
+							text:'Layer Actions',
+							menu: new Ext.menu.Menu({
+								text: 'Layer Actions',
+								items: [
+									{text: 'Discard modification'},
+									'-',
+									{text: 'Remove layer'}
+								]
+							})
+						}
+					]
+				}]
+			},{
+				region: 'center',
+				layout: 'border',
+				contentEl: 'center',
+				split: false,
+				border: false,
+				margins: '0 5 5 0',
+				
+				items: [
+					{
+						xtype:'openlayer_mappanel',
+						region:'center',
+						tbar: [{
+								text: 'Drag mode'
+							},{
+								text: 'Edit feature'
+							},'-',{
+								text: 'Map Tool 1'
+							},{
+								text: 'Map Tool 2'
+							}
+						],
+						bbar: [{
+								text: 'Modify Shape'
+							},{
+								text: 'Rotate and Resize'
+							},{
+								text: 'Move'
+							}
+						]
+					},
+					dataGrid
+				]
+			}
+		]
+	});
+	*/
+	
+	// Editing Flow
+	// 1. Select edit action
+	// 2. Select feature
+	// 3. Edit
+	// 4. Click elsewhere to
+	
+	/*
+	{
+		layout: 'vbox',
+		items: [{
+			xtype:'button',
+			text: 'Drag Mode'
+		},{
+			xtype:'button',
+			text: 'Edit Mode'
+		},{
+			xtype:'button',
+			text: 'Analyse Mode'
+		}]
+	},
+	*/
+	
+	
+});
+
+
+
+
+</script>
+
+{% endblock %}
+
+{% block body_content %}
+<div id="header"><h1>My Workspace</h1></div>
+<div id="west" class="x-hide-display"></div>
+<div id="center"></div>
+{% endblock %}

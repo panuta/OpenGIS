@@ -1,14 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}{{ block.super }} : รอรับการยืนยันการสมัครสมาชิก{% endblock %}
-
 {% block html_head %}
-<link rel="stylesheet" type="text/css" href="{{MEDIA_URL}}/css/min.base.css">
 {% endblock %}
 
-{% block content %}
-<div class="SS_Standard_Page">
-	<h1>รอรับการยืนยันการสมัครสมาชิก</h1>
-	<div>ขอบคุณสำหรับการสมัครเป็นสมาชิก! ข้อมูลยืนยันการสมัครได้ถูกส่งไปยังอีเมลของคุณเรียบร้อย กรุณายืนยันการสมัครสมาชิกเพื่อทำให้ขั้นตอนเสร็จสมบูรณ์</div>
-</div>
+{% block body_content %}
+<h1>Check your email!</h1>
+<div>You should received your register confirmation email shortly. Follow the link in the email to activate your account.</div>
 {% endblock %}

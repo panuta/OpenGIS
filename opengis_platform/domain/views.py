@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.utils import simplejson
 
-from models import ThailandProvince
+#from models import ThailandProvince
 
 def ajax_load_table_data(request, table_id):
 	

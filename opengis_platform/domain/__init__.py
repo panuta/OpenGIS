@@ -8,3 +8,4 @@ def user_post_save_callback(sender, instance, created, *args, **kwargs):
 	if created: UserProfile.objects.get_or_create(user=instance)
 
 post_save.connect(user_post_save_callback, sender=User)
+

@@ -12,151 +12,8 @@
 
 <script type="text/javascript">
 Ext.onReady(function(){
-	
 	initializeWorkspaceViewport();
-	
-	/*
-	var viewport = new Ext.Viewport({
-		layout:'border',
-		cls: 'view_workspace_page',
-		items: [
-			{
-				xtype: 'box',
-				region: 'north',
-				applyTo: 'header',
-				height: 30
-			},{
-				region: 'west',
-				contentEl: 'west',
-				layout: 'border',
-				border: false,
-				split: true,
-				width: 274,
-				minSize: 250,
-				margins: '0 0 5 5',
-				
-				items: [{
-					region: 'north',
-					layout:'vbox',
-					width: 274,
-					height: 100,
-					layoutConfig: {
-						align:'stretch',
-						padding: '5 5 0 5'
-					},
-					defaults:{margins:'0 0 5 0'},
-					items: [{
-						xtype: 'button',
-						text: 'Drag Mode',
-						flex: 1,
-						enableToggle: true,
-						pressed: true,
-						toggleGroup: 'map_mode'
-					},{
-						xtype: 'button',
-						text: 'Edit Mode',
-						flex: 1,
-						enableToggle: true,
-						toggleGroup: 'map_mode'
-					},{
-						xtype: 'button',
-						text: 'Analyse Mode',
-						flex: 1,
-						enableToggle: true,
-						toggleGroup: 'map_mode'
-					}],
-					margins: '0 0 5 0'
-				},{
-					region: 'center',
-					layout: 'fit',
-					items: [grid],
-					tbar: [
-						new Ext.Toolbar.SplitButton({
-							text: 'Add Layer',
-							menu: [
-								{text: 'Add Layer from existing table'},
-								{text: 'Add Layer from new table'}
-							]
-						}),'-',{
-							text: 'Save'
-						},{
-							text:'Layer Actions',
-							menu: new Ext.menu.Menu({
-								text: 'Layer Actions',
-								items: [
-									{text: 'Discard modification'},
-									'-',
-									{text: 'Remove layer'}
-								]
-							})
-						}
-					]
-				}]
-			},{
-				region: 'center',
-				layout: 'border',
-				contentEl: 'center',
-				split: false,
-				border: false,
-				margins: '0 5 5 0',
-				
-				items: [
-					{
-						xtype:'openlayer_mappanel',
-						region:'center',
-						tbar: [{
-								text: 'Drag mode'
-							},{
-								text: 'Edit feature'
-							},'-',{
-								text: 'Map Tool 1'
-							},{
-								text: 'Map Tool 2'
-							}
-						],
-						bbar: [{
-								text: 'Modify Shape'
-							},{
-								text: 'Rotate and Resize'
-							},{
-								text: 'Move'
-							}
-						]
-					},
-					dataGrid
-				]
-			}
-		]
-	});
-	*/
-	
-	// Editing Flow
-	// 1. Select edit action
-	// 2. Select feature
-	// 3. Edit
-	// 4. Click elsewhere to
-	
-	/*
-	{
-		layout: 'vbox',
-		items: [{
-			xtype:'button',
-			text: 'Drag Mode'
-		},{
-			xtype:'button',
-			text: 'Edit Mode'
-		},{
-			xtype:'button',
-			text: 'Analyse Mode'
-		}]
-	},
-	*/
-	
-	
 });
-
-
-
 
 </script>
 
@@ -164,6 +21,17 @@ Ext.onReady(function(){
 
 {% block body_content %}
 <div id="header"><h1>My Workspace</h1></div>
-<div id="west" class="x-hide-display"></div>
+<div id="west" class="x-hide-display">
+	<ul id="workspace-layers">
+		{% for layer in layers %}
+		<li>
+			<span class="layer_id">{{layer.id}}</span>
+			<span class="layer_name">{{layer.name}}</span>
+			<span class="show_map">{{layer.is_show_map}}</span>
+			<span class="show_data">{{layer.is_show_data}}</span>
+		</li>
+		{% endfor %}
+	</ul>
+</div>
 <div id="center"></div>
 {% endblock %}

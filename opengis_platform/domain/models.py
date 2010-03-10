@@ -26,7 +26,7 @@ class TableDescriptor(models.Model):
 	project = models.ForeignKey('Project')
 	name = models.CharField(max_length=512)
 	class_name = models.CharField(max_length=512)
-	description = models.CharField(max_length=512)
+	description = models.CharField(max_length=512, blank=True)
 	share_level = models.IntegerField(default=1)
 	created = models.DateTimeField(auto_now_add=True)
 	created_by = models.ForeignKey('UserProfile')
@@ -42,6 +42,8 @@ class TableColumnDescriptor(models.Model):
 """
 FOR TESTING
 """
+
+"""
 from django.contrib.gis.db import models as gis_models
 
 class ThailandProvince(gis_models.Model):
@@ -49,4 +51,4 @@ class ThailandProvince(gis_models.Model):
 	region = gis_models.PolygonField(null=True)
 	location = gis_models.PointField(null=True)
 	objects = gis_models.GeoManager()
-
+"""

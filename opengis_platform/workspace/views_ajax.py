@@ -73,7 +73,7 @@ def ajax_get_layers_map_data(request):
 					
 				rows.append(datum_columns)
 			
-			layers.append({'id':layer.id, 'rows':rows})
+			layers.append({'id':layer.id, 'name':layer.name, 'rows':rows})
 			
 		return HttpResponse(simplejson.dumps({'layers':layers}))
 	

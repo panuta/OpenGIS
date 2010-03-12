@@ -11,3 +11,5 @@
 
 .view_workspace_page .layer_item_modified {}
 .view_workspace_page .layer_item_modified span {font-style:italic;color:#960;}
+
+.view_workspace_page .x-view-selected {background-color:#69C;}

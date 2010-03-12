@@ -6,7 +6,7 @@ GLOBAL VARIABLES
 OPEN LAYERS MAP PANEL ************************************************************************************
 */
 
-OpenLayerMapPanel = Ext.extend(Ext.Panel, {
+OpenLayersMapPanel = Ext.extend(Ext.Panel, {
 	initComponent : function(){
 		var defConfig = {
 			centerLat: 20,
@@ -15,101 +15,187 @@ OpenLayerMapPanel = Ext.extend(Ext.Panel, {
 		};
 		
 		Ext.applyIf(this,defConfig);
-		OpenLayerMapPanel.superclass.initComponent.call(this);
+		OpenLayersMapPanel.superclass.initComponent.call(this);
 	},
 	
 	afterRender : function(){
+		var thisMapPanel = this;
 		var wh = this.ownerCt.getSize();
 		Ext.applyIf(this, wh);
 		
-		OpenLayerMapPanel.superclass.afterRender.call(this);
+		OpenLayersMapPanel.superclass.afterRender.call(this);
 		
+		this.loaded_layers = new Array();
 		this.map = new OpenLayers.Map(this.body.dom.id);
 		this.map.addControl(new OpenLayers.Control.MousePosition());
 		
 		var wms = new OpenLayers.Layer.WMS("OpenLayers WMS", "http://labs.metacarta.com/wms/vmap0", {layers: 'basic'} );
 		this.map.addLayer(wms);
 		
-		this.vectors = new OpenLayers.Layer.Vector("Editing");
-		this.map.addLayer(this.vectors);
-		
 		// Load map data
-		var layer_string = '';
+		var url_string = '';
 		for(var i=0; i<this.preloaded_layers.length; i++) {
 			if(this.preloaded_layers[i][2]) {
-				if(layer_string != '') layer_string = layer_string + '&';
-				layer_string = layer_string + 'layer=' + this.preloaded_layers[i][0];
+				if(url_string != '') url_string = url_string + '&';
+				url_string = url_string + 'layer=' + this.preloaded_layers[i][0];
 			}
 		}
 		
+		if(url_string != '') {
+			this._loadLayerData(url_string, true);
+		} else {
+			this.map.setCenter(new OpenLayers.LonLat(this.centerLng, this.centerLat), 7);
+		}
+	},
+	showLayer: function(layer_id) {
+		var layer = this.map.getLayer(layer_id);
+		if(layer == null) {
+			var url_string = 'layer=' + layer_id;
+			this._loadLayerData(url_string, false);
+		} else {
+			layer.setVisibility(true);
+		}
+	},
+	hideLayer: function(layer_id) {
+		this.map.getLayer(layer_id).setVisibility(false);
+	},
+	adjust: function(bounds) {
+		this.map.setCenter(bounds.getCenterLonLat());
+		this.map.zoomToExtent(bounds);
+	},
+	_loadLayerData: function(url_string, is_adjust) {
+		var _this = this;
 		Ext.Ajax.request({
 			url: '/workspace/ajax/layers/map/',
 			method: 'GET',
 			success: function(response, opts) {
 				var obj = Ext.decode(response.responseText);
+				var wktParser = new OpenLayers.Format.WKT();
+				var bounds = new OpenLayers.Bounds();
 				
 				for(var i=0; i<obj.layers.length; i++) {
-					for(var j=0; j<obj.layers[i].rows.length; j++) {
-						for(var k=0; k<obj.layers[i].rows[j].spacial.length; k++) {
-							this.addWKTFeature(obj.layers[i].rows[j].spacial[k]);
+					var layer = obj.layers[i];
+					
+					// Remove existing layer
+					var existing_layer = _this.map.getLayer(layer.id);
+					if(existing_layer != null) _this.map.removeLayer(existing_layer);
+					
+					var vector = new OpenLayers.Layer.Vector(layer.name);
+					vector.id = layer.id;
+					
+					for(var j=0; j<layer.rows.length; j++) {
+						for(var k=0; k<layer.rows[j].spacial.length; k++) {
+							var feature = wktParser.read(layer.rows[j].spacial[k]);
+							vector.addFeatures(feature);
+							if(is_adjust) bounds.extend(feature.geometry.getBounds());
 						}
 					}
+					
+					_this.loaded_layers.push({'id':layer.id, 'name':layer.name});
+					_this.map.addLayer(vector);
 				}
 				
-				Ext.getCmp('workspace-map-panel').adjustCenterAndZoom();
+				if(is_adjust) _this.adjust(bounds);
 			},
 			failure: function(response, opts) {},
-			params: layer_string
+			params: url_string
 		});
-		
-		//this.control = new OpenLayers.Control.ModifyFeature(this.vectors, {clickout:false, toggle:false});
-		//this.map.addControl(this.control);
-		
-		this.map.setCenter(new OpenLayers.LonLat(this.centerLng, this.centerLat), 7);
 	},
-	addWKTFeature: function(wkt) {
-		var wktParser = new OpenLayers.Format.WKT();
-		var feature = wktParser.read(wkt);
-		
-		this.vectors.addFeatures(feature);
-	},
-	adjustCenterAndZoom: function() {
-		var bounds = this.vectors.getDataExtent();
-		this.map.setCenter(bounds.getCenterLonLat(), 7);
-		this.map.zoomToExtent(bounds);
-	},
-	
-	editWKT: function(wkt) {
-		var wktParser = new OpenLayers.Format.WKT();
-		var feature = wktParser.read(wkt);
-		
-		this.vectors.destroyFeatures();
-		this.vectors.addFeatures(feature);
-		
-		var bounds = this.vectors.getDataExtent();
-		
-		this.map.setCenter(bounds.getCenterLonLat(), 7);
-		
-		if(!(feature.geometry instanceof OpenLayers.Geometry.Point)) {
-			this.map.zoomToExtent(bounds);
+	startModifyShape: function() {
+		for(var i=0; i<this.loaded_layers.length; i++) {
+			console.log('start modify ' + this.loaded_layers[i]['id']);
+			var layer = this.map.getLayer(this.loaded_layers[i]['id']);
+			
+			var control = new OpenLayers.Control.ModifyFeature(layer, {clickout:true, toggle:false});
+			this.map.addControl(control);
+			control.activate();
 		}
-		
-		this.control.selectFeature(feature);
-	},
-	retrieveWKT: function() {
-		this.control.deactivate();
-		this.control.activate();
-		
-		var wktParser = new OpenLayers.Format.WKT();
-		var wktString = wktParser.write(this.vectors.features);
-		return wktString.substring(19, wktString.length-1); // Remove GEOMETRYCOLLECTION
 	}
 });
+Ext.reg('openlayers_mappanel', OpenLayersMapPanel);
 
-Ext.reg('openlayer_mappanel', OpenLayerMapPanel);
-
-
-
+LayerDataPanel = Ext.extend(Ext.TabPanel, {
+	initComponent : function() {
+		var tabItems = new Array();
+		
+		for(var i=0; i<this.preloaded_layers.length; i++) {
+			if(this.preloaded_layers[i][3] == true) {
+				tabItems.push({
+					id:'data-panel-tab-' + this.preloaded_layers[i][0],
+					title:this.preloaded_layers[i][1],
+					layout:'fit',
+					layer_id:this.preloaded_layers[i][0],
+					items:[{
+						xtype:'layer_data_grid',
+						layer_id:this.preloaded_layers[i][0]
+					}]
+				});
+			}
+		}
+		
+		var defConfig = {
+			activeTab: 0,
+			region: 'center',
+			border: false,
+			items: tabItems
+		};
+		
+		Ext.applyIf(this,defConfig);
+		LayerDataPanel.superclass.initComponent.call(this);
+	},
+	afterRender : function() {
+		LayerDataPanel.superclass.afterRender.call(this);
+	},
+	showLayer: function(layer_id, layer_name) {
+		var _this = this;
+		var item = Ext.getCmp('data-panel-tab-' + layer_id);
+		
+		if(item == null) {
+			item = _this.add({
+				id:'data-panel-tab-' + layer_id,
+				title:layer_name,
+				layout:'fit',
+				layer_id:layer_id,
+				items:[{
+					xtype:'layer_data_grid',
+					layer_id:layer_id
+				}]
+			});
+		} else {
+			_this.unhideTabStripItem(item);
+			item.show();
+		}
+		
+		_this.setActiveTab(item);
+		
+		if(Ext.getCmp('workspace-data-panel-container').hidden) {
+			Ext.getCmp('workspace-data-panel-container').show();
+			Ext.getCmp('workspace-data-panel-container').ownerCt.doLayout();
+		}
+	},
+	hideLayer: function(layer_id) {
+		var _this = this;
+		var item = Ext.getCmp('data-panel-tab-' + layer_id);
+		
+		_this.hideTabStripItem(item);
+		item.hide();
+		
+		var visibleItems = 0;
+		Ext.each(this.items.items, function(item) {
+			var el = _this.getTabEl(item);
+			if(el.style.display != 'none') {
+				visibleItems = visibleItems + 1;
+				_this.setActiveTab(item);
+			}
+		});
+		
+		if(visibleItems == 0) {
+			Ext.getCmp('workspace-data-panel-container').hide();
+			Ext.getCmp('workspace-data-panel-container').ownerCt.doLayout();
+		}
+	}
+});
+Ext.reg('layer_data_panel', LayerDataPanel);
 
 LayerDataGrid = Ext.extend(Ext.grid.GridPanel, {
 	initComponent : function(){
@@ -121,21 +207,10 @@ LayerDataGrid = Ext.extend(Ext.grid.GridPanel, {
 		
 		var defConfig = {
 			store: store,
-			region: 'south',
 			border: false,
-			frame: false,
-			height:200,
 			cm: new Ext.grid.ColumnModel({columns:[]}),
-			sm: new Ext.grid.CheckboxSelectionModel({selectSingle:false, checkOnly:true}),
-			loadMask: true,
-			tbar: [{
-				text: 'Add new row'
-			},{
-				text: 'Zoom to'
-			},{
-				text: 'Delete row'
-			}],
-			margins: '5 0 0 0'
+			sm: new Ext.grid.CheckboxSelectionModel({selectSingle:true}),
+			loadMask: true
 		};
 		Ext.apply(this, defConfig);
 		
@@ -169,7 +244,7 @@ Ext.reg('layer_data_grid', LayerDataGrid);
 function initializeMapPanel(preloaded_layers) {
 	return {
 		id: 'workspace-map-panel',
-		xtype:'openlayer_mappanel',
+		xtype:'openlayers_mappanel',
 		region:'center',
 		tbar: [{
 			text: 'View All',
@@ -179,6 +254,18 @@ function initializeMapPanel(preloaded_layers) {
 			cls: 'view-mode'
 		},{
 			text: 'Modify Shape',
+			cls: 'edit-mode',
+			hidden: true,
+			handler: function(b, e) {
+				var mapPanel = Ext.getCmp('workspace-map-panel');
+				mapPanel.startModifyShape();
+			}
+		},{
+			text: 'Rotate and Resize',
+			cls: 'edit-mode',
+			hidden: true
+		},{
+			text: 'Move',
 			cls: 'edit-mode',
 			hidden: true
 		}],
@@ -279,8 +366,8 @@ function initializeLayersGrid(preloaded_layers) {
 			'<div class="layer_item">',
 				'<h3>{name}</h3><div class="status">status: <span>No change</span></div>',
 				'<div class="actions">',
-					'<label><input type="checkbox" class="show_map_checkbox" name="show-map" <tpl if="show_map">checked="checked"</tpl>/> Show Map</label>',
-					'<label><input type="checkbox" class="show_data_checkbox" name="show-data" <tpl if="show_data">checked="checked"</tpl>/> Show Data</label>',
+					'<label><input type="checkbox" class="show_map_checkbox" name="show-map" <tpl if="show_map">checked="checked"</tpl>/> Show in Map</label>',
+					'<label><input type="checkbox" class="show_data_checkbox" name="show-data" <tpl if="show_data">checked="checked"</tpl>/> Data List</label>',
 				'</div>',
 			'</div>',
 		'</tpl>'
@@ -300,13 +387,23 @@ function initializeLayersGrid(preloaded_layers) {
 			listeners: {
 				click: function(t, index, node, e) {
 					if(e.getTarget(".show_map_checkbox", node)) {
-						console.log(e.getTarget().checked);
-						console.log(t.store.getAt(index).get('id'));
+						var mapPanel = Ext.getCmp('workspace-map-panel');
 						
+						if(e.getTarget().checked) {
+							mapPanel.showLayer(t.store.getAt(index).get('id'));
+						} else {
+							mapPanel.hideLayer(t.store.getAt(index).get('id'));
+						}
 					}
 					
 					if(e.getTarget(".show_data_checkbox", node)) {
+						var dataPanel = Ext.getCmp('workspace-data-panel');
 						
+						if(e.getTarget().checked) {
+							dataPanel.showLayer(t.store.getAt(index).get('id'), t.store.getAt(index).get('name'));
+						} else {
+							dataPanel.hideLayer(t.store.getAt(index).get('id'));
+						}
 					}
 				}
 			}
@@ -341,26 +438,28 @@ function initializeLayersGrid(preloaded_layers) {
 DATA GRID **********************************************************************************************************
 */
 function initializeDataTabPanel(preloaded_layers) {
-	var tabItems = new Array();
-	
-	for(var i=0; i<preloaded_layers.length; i++) {
-		if(preloaded_layers[i][3] == true) {
-			tabItems.push({title:preloaded_layers[i][1], layout:'fit', items:[{xtype:'layer_data_grid', layer_id:preloaded_layers[i][0]}]});
-		}
-	}
-	
-	var tabs = new Ext.TabPanel({
-		activeTab: 0,
-		region: 'south',
-		border: true,
+	return {
+		id:'workspace-data-panel-container',
+		layout:'border',
+		region:'south',
 		split: true,
 		collapseMode: 'mini',
-		frame: false,
 		height:200,
-		items: tabItems
-	});
+		items: [{
+			xtype:'layer_data_panel',
+			id: 'workspace-data-panel',
+			region:'center',
+			preloaded_layers: preloaded_layers
+		}],
+		tbar: [{
+			text: 'Add new row'
+		},{
+			text: 'Zoom to'
+		},{
+			text: 'Delete row'
+		}]
+	}
 	
-	return tabs;
 }
 
 /*

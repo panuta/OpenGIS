@@ -5,21 +5,25 @@ from django.utils import simplejson
 
 from models import *
 
-from domain.models import TableColumnDescriptor
+from project.models import TableColumnDescriptor
 
 from helper.shortcuts import render_response
-from helper.utilities import change_to_extjs_field_type, serialize_spacial
 
 @login_required
-def view_workspace_list(request):
+def view_user_workspaces(request):
 	workspaces = Workspace.objects.filter(created_by=request.user.get_profile())
-	return render_response(request, 'workspace/workspace_list.html', {'workspaces':workspaces})
+	return render_response(request, 'workspace/workspaces.html', {'workspaces':workspaces})
 
 @login_required
-def view_workspace(request, workspace_id):
+def view_user_workspace(request, workspace_id):
 	workspace = get_object_or_404(Workspace, pk=workspace_id)
 	
 	layers = WorkspaceLayer.objects.filter(workspace=workspace).order_by('ordering')
+	
+	from helper.constants import SPATIAL_TYPE_STRING
+	
+	for layer in layers:
+		layer.spatial_type = SPATIAL_TYPE_STRING[layer.table.spatial_type]
 	
 	return render_response(request, 'workspace/workspace_view.html', {'workspace':workspace, 'layers':layers})
 	

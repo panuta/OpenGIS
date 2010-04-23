@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block html_head %}
+<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key="></script>
 <script src="{{MEDIA_URL}}/openlayer/OpenLayers.js"></script>
 
 <link rel="stylesheet" type="text/css" href="{{MEDIA_URL}}/extjs/resources/css/ext-all.css" />
@@ -8,13 +9,14 @@
 <script type="text/javascript" src="{{MEDIA_URL}}/extjs/ext-all.js"></script>
 <link rel="stylesheet" type="text/css" href="{{MEDIA_URL}}/css/resources/css/ext-all.css" />
 
-<script type="text/javascript" src="{{MEDIA_URL}}/scripts/script.workspace.js"></script>
+<script type="text/javascript" src="{{MEDIA_URL}}/scripts/workspace/workspace.view.map.js"></script>
+<script type="text/javascript" src="{{MEDIA_URL}}/scripts/workspace/workspace.view.js"></script>
 
 <script type="text/javascript">
+var _workspace_id = {{workspace.id}};
 Ext.onReady(function(){
 	initializeWorkspaceViewport();
 });
-
 </script>
 
 {% endblock %}
@@ -27,8 +29,10 @@ Ext.onReady(function(){
 		<li>
 			<span class="layer_id">{{layer.id}}</span>
 			<span class="layer_name">{{layer.name}}</span>
-			<span class="show_map">{{layer.is_show_map}}</span>
-			<span class="show_data">{{layer.is_show_data}}</span>
+			<span class="source_name">{{layer.table.project.name}} - {{layer.table.name}}</span>
+			<!--<span class="table_id">{{layer.table.id}}</span>-->
+			<span class="spatial_type">{{layer.spatial_type}}</span>
+			<span class="is_show">{{layer.is_show}}</span>
 		</li>
 		{% endfor %}
 	</ul>

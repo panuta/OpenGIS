@@ -43,14 +43,16 @@ TEMPLATE_LOADERS = (
 )
 
 MIDDLEWARE_CLASSES = (
-    'django.middleware.common.CommonMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
+	'middleware.AJAXSimpleExceptionResponse',
+	'django.middleware.common.CommonMiddleware',
+	'django.contrib.sessions.middleware.SessionMiddleware',
+	'django.contrib.auth.middleware.AuthenticationMiddleware',
 )
 
 ROOT_URLCONF = 'opengis_platform.urls'
 
-AUTH_PROFILE_MODULE = 'domain.UserProfile'
+LOGIN_REDIRECT_URL = "/my/projects/"
+AUTH_PROFILE_MODULE = 'accounts.UserProfile'
 ACCOUNT_ACTIVATION_DAYS = 3
 
 TEMPLATE_DIRS = (
@@ -59,13 +61,16 @@ TEMPLATE_DIRS = (
 
 INSTALLED_APPS = (
 	'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.sites',
-    'registration',
-    'opengis_platform.domain',
-    'opengis_platform.frontend',
-    'opengis_platform.backend',
+	'django.contrib.auth',
+	'django.contrib.contenttypes',
+	'django.contrib.sessions',
+	'django.contrib.sites',
+	'registration',
+	'opengis_platform.homepage',
+	'opengis_platform.accounts',
+	'opengis_platform.project',
 	'opengis_platform.workspace',
 )
+
+# OPENGIS #
+TABLE_SPATIAL_COLUMN_NAME = 'spatial'

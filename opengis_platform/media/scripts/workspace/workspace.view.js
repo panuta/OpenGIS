@@ -250,6 +250,19 @@ function initializeAddLayerWindow() {
 									// Load spatial data and show on map
 									var mapPanel = Ext.getCmp('workspace-map-panel');
 									mapPanel.showLayer(response_json['id']);
+									
+									// Load data and show on grid
+									var dataTabPanel = Ext.getCmp('workspace-data-panel');
+									dataTabPanel.add({
+										id:'data-panel-tab-' + response_json['id'],
+										title:text,
+										layout:'fit',
+										layer_id:response_json['id'],
+										items:[{
+											xtype:'layer_data_grid',
+											layer_id:response_json['id']
+										}]
+									});
 								},
 								failure: function(response, opts) {},
 								params: 'workspace_id='+_workspace_id+'&layer_name='+text+'&table_id='+table_id

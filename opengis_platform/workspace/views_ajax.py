@@ -69,6 +69,9 @@ def ajax_add_table_layer(request):
 		pass
 	
 	max_ordering = WorkspaceLayer.objects.filter(workspace=workspace).aggregate(Max('ordering'))['ordering__max']
+	
+	if not max_ordering: max_ordering = 0
+	
 	new_layer = WorkspaceLayer.objects.create(workspace=workspace, name=layer_name, table=table, ordering=max_ordering+1)
 	
 	return HttpResponse(simplejson.dumps({'id':new_layer.id, 'source_name': table.project.name+' - '+table.name, 'spatial_type':table.spatial_type}))

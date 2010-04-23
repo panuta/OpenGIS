@@ -1,5 +1,5 @@
 
-from project.sql import *
+from helper.constants import *
 
 def change_to_extjs_field_type(data_type):
 	if data_type == TYPE_CHARACTER:

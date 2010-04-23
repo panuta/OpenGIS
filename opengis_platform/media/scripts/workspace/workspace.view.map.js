@@ -146,7 +146,7 @@ OpenLayersMapPanel = Ext.extend(Ext.Panel, {
 		
 		this.map.addControl(new OpenLayers.Control.MousePosition());
 		
-		this.base_layers['google'] = new OpenLayers.Layer.Google("Google", {sphericalMercator:true});
+		this.base_layers['google'] = new OpenLayers.Layer.Google("Google", {type:G_HYBRID_MAP, sphericalMercator:true});
 		
 		this.base_layers['osm'] = new OpenLayers.Layer.TMS(
 			"OpenStreetMap", "http://tile.openstreetmap.org/",

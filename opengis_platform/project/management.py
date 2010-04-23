@@ -26,6 +26,7 @@ def after_syncdb(sender, **kwargs):
 		first_account.last_name = 'Tangchalermkul'
 		first_account.save()
 	
+	"""
 	project, created = Project.objects.get_or_create(name='My Project', created_by=first_account)
 	
 	UserProject.objects.get_or_create(user=first_account, project=project)
@@ -75,6 +76,7 @@ def after_syncdb(sender, **kwargs):
 	if created:
 		WorkspaceLayer.objects.create(workspace=workspace1, name='Layer for table1', table=table1, is_show=True, ordering=1)
 		WorkspaceLayer.objects.create(workspace=workspace1, name='Layer for table2', table=table2, is_show=True, ordering=2)
+	"""
 
 from django.db.models.signals import post_syncdb
 post_syncdb.connect(after_syncdb, dispatch_uid="domain.management")

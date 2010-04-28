@@ -146,7 +146,8 @@ OpenLayersMapPanel = Ext.extend(Ext.Panel, {
 		
 		this.map.addControl(new OpenLayers.Control.MousePosition());
 		
-		this.base_layers['google'] = new OpenLayers.Layer.Google("Google", {type:G_HYBRID_MAP, sphericalMercator:true});
+		this.base_layers['google_map'] = new OpenLayers.Layer.Google("Google", {sphericalMercator:true});
+		this.base_layers['google_sat'] = new OpenLayers.Layer.Google("Google", {type:G_HYBRID_MAP, sphericalMercator:true});
 		
 		this.base_layers['osm'] = new OpenLayers.Layer.TMS(
 			"OpenStreetMap", "http://tile.openstreetmap.org/",
@@ -157,7 +158,7 @@ OpenLayersMapPanel = Ext.extend(Ext.Panel, {
 			}
 		);
 		
-		this.map.addLayers([this.base_layers['google'], this.base_layers['osm']]);
+		this.map.addLayers([this.base_layers['google_sat'], this.base_layers['google_map'], this.base_layers['osm']]);
 		
 		// Load map data if 'preloaded_layers' variable is supplied
 		var url_string = '';
@@ -179,18 +180,30 @@ OpenLayersMapPanel = Ext.extend(Ext.Panel, {
 		this.map.setBaseLayer(this.base_layers[layer_code]);
 	},
 	
-	showLayer: function(layer_id) {
-		var layer = this.map.getLayer(layer_id);
-		if(layer == null) {
-			var url_string = 'layer=' + layer_id;
-			this._loadLayerData(url_string, false);
-		} else {
-			layer.setVisibility(true);
-		}
+	addLayer: function(layer_id) {
+		var url_string = 'layer=' + layer_id;
+		this._loadLayerData(url_string, false);
+	},
+	removeLayer: function(layer_id) {
+		this.map.removeLayer(this.map.getLayer(layer_id));
+	},
+	toggleLayer: function(layer_id, visibility) {
+		this.map.getLayer(layer_id).setVisibility(visibility);
 	},
 	
-	hideLayer: function(layer_id) {
-		this.map.getLayer(layer_id).setVisibility(false);
+	showFeaturePopup: function(layer_id, feature_id, data, columnNames) {
+		var feature = this._get_layer(layer_id)['vector'].getFeatureById(feature_id);
+		var point = feature.geometry.getCentroid();
+		
+		var html = "";
+		for(var i=0; i<columnNames.length; i++) {
+			html = html + "<div><span>" + columnNames[i].header + ":</span> " + data[columnNames[i].name] + "</div>";
+		}
+		html = '<div class="map_info_window">' + html + '</div>';
+		
+		if(this.popup != undefined && this.popup != null) this.map.removePopup(this.popup);
+		this.popup = new OpenLayers.Popup.FramedCloud("feature_info", new OpenLayers.LonLat(point.x, point.y), new OpenLayers.Size(50,50), html, null, true);
+		this.map.addPopup(this.popup);
 	},
 	
 	getLayerFeatures: function(layer_id) {
@@ -232,7 +245,7 @@ OpenLayersMapPanel = Ext.extend(Ext.Panel, {
 	_loadLayerData: function(url_string, is_adjust) {
 		var _this = this;
 		Ext.Ajax.request({
-			url: '/ajax/workspace/get-table-spatial-data/',
+			url: '/ajax/workspace/get-layer-spatial-data/',
 			method: 'GET',
 			success: function(response, opts) {
 				var obj = Ext.decode(response.responseText);
@@ -324,14 +337,21 @@ function onFeatureAdded(e) {
 	
 	var wktParser = new OpenLayers.Format.WKT();
 	
-	_data_popup_windows.show_add(mapPanel._active_layer_id, wktParser.write(e.feature), function(action, row_id) {
-		if(action == 'save') {
-			e.feature.id = row_id;
-		}
+	_data_popup_windows.show_add(mapPanel._active_layer_id, function(data, _data_popup_window) {
+		data['layer_id'] = mapPanel._active_layer_id;
+		data['spatial'] = wktParser.write(e.feature);
 		
-		if(action == 'cancel') {
-			e.feature.layer.removeFeatures(e.feature);
-		}
+		$.post("/ajax/workspace/insert-layer-row/", data, function(row_id) {
+			e.feature.id = row_id;
+			
+			var dataPanel = Ext.getCmp('workspace-data-panel');
+			dataPanel.addLayerRow(mapPanel._active_layer_id, row_id, data);
+			
+			_data_popup_window.hide();
+		});
+	}, function(_data_popup_window) {
+		e.feature.layer.removeFeatures(e.feature);
+		_data_popup_window.hide();
 	});
 }
 

@@ -100,8 +100,8 @@ def ajax_get_layer_data(request):
 		fields = []
 		columns = []
 		for table_column in table_columns:
-			fields.append({'name':table_column.db_column_name, 'type':change_to_extjs_field_type(table_column.data_type)})
-			columns.append({'name':table_column.db_column_name, 'header':table_column.name, 'dataIndex':table_column.db_column_name})
+			fields.append({'name':table_column.id, 'type':change_to_extjs_field_type(table_column.data_type)})
+			columns.append({'name':table_column.id, 'header':table_column.name, 'dataIndex':table_column.id})
 		
 		metadata = {'idProperty':'id', 'root':'rows','sort_info':{'field':'id','direction':'ASC'},'fields':fields}
 		
@@ -112,7 +112,7 @@ def ajax_get_layer_data(request):
 		for datum in data:
 			datum_columns = {'id':datum.id}
 			for table_column in table_columns:
-				datum_columns[table_column.db_column_name] = getattr(datum, table_column.db_column_name)
+				datum_columns[table_column.id] = getattr(datum, table_column.db_column_name)
 			
 			rows.append(datum_columns)
 		
@@ -123,7 +123,56 @@ def ajax_get_layer_data(request):
 	return HttpResponse('')
 
 @login_required
-def ajax_insert_layer_data(request):
+def ajax_get_layer_spatial_data(request):
+	layer_ids = request.GET.getlist('layer')
+	
+	if layer_ids:
+		layers = []
+		for layer_id in layer_ids:
+			layer = WorkspaceLayer.objects.get(pk=layer_id)
+			
+			from project.functions import get_table_data
+			data = get_table_data(layer.table)
+			
+			rows = []
+			for datum in data:
+				datum_columns = {'id':datum.id, 'spatial':serialize_spatial(getattr(datum, 'spatial'))}
+				rows.append(datum_columns)
+				
+			layers.append({'id':layer.id, 'name':layer.name, 'spatial_type':layer.table.spatial_type, 'rows':rows})
+			
+		return HttpResponse(simplejson.dumps({'layers':layers}))
+		
+	return HttpResponse('')
+
+@login_required
+def ajax_rename_layer(request):
+	workspace_id = request.POST.get('workspace_id')
+	layer_id = request.POST.get('layer_id')
+	layer_name = request.POST.get('layer_name')
+	
+	layer = WorkspaceLayer.objects.get(pk=layer_id)
+	layer.name = layer_name
+	layer.save()
+	
+	return HttpResponse('')
+
+@login_required
+def ajax_delete_layer(request):
+	workspace_id = request.POST.get('workspace_id')
+	layer_id = request.POST.get('layer_id')
+	
+	layer = WorkspaceLayer.objects.get(pk=layer_id)
+	layer.delete()
+	
+	return HttpResponse('')
+
+@login_required
+def ajax_insert_layer_row(request):
+	"""
+	Note:
+	Use column id as a key to data in request.POST
+	"""
 	layer_id = request.POST.get('layer_id')
 	spatial_data = request.POST.get('spatial')
 	
@@ -143,7 +192,26 @@ def ajax_insert_layer_data(request):
 	return HttpResponse(row_obj.id)
 
 @login_required
-def ajax_save_layer_geo_data(request):
+def ajax_update_layer_row(request):
+	layer_id = request.POST.get('layer_id')
+	row_id = request.POST.get('row_id')
+	
+	layer = WorkspaceLayer.objects.get(pk=layer_id)
+	table_columns = TableColumnDescriptor.objects.filter(table=layer.table)
+	
+	table_model = get_table_model(layer.table)
+	row_obj = table_model.objects.get(pk=row_id)
+	
+	for column in table_columns:
+		data = request.POST.get(str(column.id))
+		setattr(row_obj, column.db_column_name, data)
+	
+	row_obj.save()
+	
+	return HttpResponse()
+
+@login_required
+def ajax_update_layer_row_spatial(request):
 	layer_id = request.POST.get('layer_id')
 	rows = request.POST.getlist('row')
 	
@@ -156,87 +224,17 @@ def ajax_save_layer_geo_data(request):
 	
 	return HttpResponse('')
 
-
-
 @login_required
-def ajax_get_layer_row_structure(request):
-	layer_id = request.GET.get('layer_id')
+def ajax_delete_layer_row(request):
+	layer_id = request.POST.get('layer_id')
+	row_id = request.POST.get('row_id')
 	
-	pass
-
-@login_required
-def ajax_get_layer_row_data(request):
-	layer_id = request.GET.get('layer_id')
-	row_id = request.GET.get('row_id')
+	layer = WorkspaceLayer.objects.get(pk=layer_id)
+	table_columns = TableColumnDescriptor.objects.filter(table=layer.table)
+	
+	table_model = get_table_model(layer.table)
+	row_obj = table_model.objects.get(pk=row_id)
+	
+	row_obj.delete();
 	
 	return HttpResponse('')
-
-
-
-
-
-
-
-
-
-
-
-
-@login_required
-def ajax_get_table_spatial_data(request):
-	layer_ids = request.GET.getlist('layer')
-	
-	if layer_ids:
-		layers = []
-		for layer_id in layer_ids:
-			layer = WorkspaceLayer.objects.get(pk=layer_id)
-			
-			from project.functions import get_table_data
-			data = get_table_data(layer.table)
-			
-			rows = []
-			for datum in data:
-				datum_columns = {'id':datum.id, 'spatial':serialize_spatial(getattr(datum, 'spatial'))}
-				rows.append(datum_columns)
-			
-			layers.append({'id':layer.id, 'name':layer.name, 'spatial_type':layer.table.spatial_type, 'rows':rows})
-			
-		return HttpResponse(simplejson.dumps({'layers':layers}))
-	
-	return HttpResponse('')
-
-@login_required
-def ajax_get_table_data_extjs(request):
-	layer_id = request.GET.get('id')
-	
-	if layer_id:
-		layer = WorkspaceLayer.objects.get(pk=layer_id)
-		table_columns = TableColumnDescriptor.objects.filter(table=layer.table)
-		
-		fields = []
-		columns = []
-		for table_column in table_columns:
-			fields.append({'name':table_column.db_column_name, 'type':change_to_extjs_field_type(table_column.data_type)})
-			columns.append({'name':table_column.db_column_name, 'header':table_column.name, 'dataIndex':table_column.db_column_name})
-		
-		metadata = {'idProperty':'id', 'root':'rows','sort_info':{'field':'id','direction':'ASC'},'fields':fields}
-		
-		from project.functions import get_table_data
-		data = get_table_data(layer.table)
-		
-		rows = []
-		for datum in data:
-			datum_columns = {'id':datum.id}
-			for table_column in table_columns:
-				datum_columns[table_column.db_column_name] = getattr(datum, table_column.db_column_name)
-			
-			rows.append(datum_columns)
-		
-		table_data = {'metaData':metadata, 'success':True, 'results':len(data), 'rows':rows, 'columns':columns}
-		
-		return HttpResponse(simplejson.dumps(table_data))
-	
-	return HttpResponse('')
-
-
-	

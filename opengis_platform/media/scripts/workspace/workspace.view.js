@@ -3,8 +3,22 @@ var _data_popup_window;
 var _data_popup_window_props;
 
 var _data_popup_windows = {
-	show_add: function(layer_id, feature_wkt, callback) {
+	show_add: function(layer_id, save_callback, cancel_callback) {
+		this._init_window();
+		this.save_callback = save_callback;
+		this.cancel_callback = cancel_callback;
+		this.load_data(layer_id);
+	},
+	show_edit: function(layer_id, data, save_callback, cancel_callback) {
+		this._init_window();
+		this.save_callback = save_callback;
+		this.cancel_callback = cancel_callback;
+		this.load_data(layer_id, data);
+	},
+	_init_window: function() {
 		if(!_data_popup_window || !_data_popup_window_props) {
+			var _this = this;
+			
 			_data_popup_window_props = new Ext.grid.PropertyGrid({
 				width: 400,
 				border: false,
@@ -17,7 +31,7 @@ var _data_popup_windows = {
 			
 			_data_popup_window = new Ext.Window({
 				layout: 'fit',
-				title: 'Data Window',
+				title: 'Data',
 				width: 350,
 				height: 400,
 				closeAction: 'hide',
@@ -25,112 +39,59 @@ var _data_popup_windows = {
 				buttons: [{
 					text:'Save',
 					handler: function(b, e) {
-						var _columns_mapping = _data_popup_window_props._columns_mapping;
-						
-						var savingArray = {layer_id:layer_id, spatial:feature_wkt};
-						for(var i=0; i<_data_popup_window_props.store.data.items.length; i++) {
-							savingArray[_columns_mapping[_data_popup_window_props.store.data.items[i].data.name]] = _data_popup_window_props.store.data.items[i].data.value;
+						if(_this.save_callback) {
+							var data = new Object();
+							for(var i=0; i<_data_popup_window_props.store.data.items.length; i++) {
+								data[_data_popup_window_props.store.data.items[i].data.name+''] = _data_popup_window_props.store.data.items[i].data.value;
+							}
+							_this.save_callback(data, _data_popup_window);
 						}
-						
-						$.post("/ajax/workspace/insert-layer-data/", savingArray, function(result) {
-							callback('save', result);
-							_data_popup_window.hide();
-						});
 					}
 				},{
 					text:'Cancel',
 					handler: function(b, e) {
-						callback('cancel');
-						_data_popup_window.hide();
+						if(_this.cancel_callback) _this.cancel_callback(_data_popup_window);
 					}
 				}]
 			});
 		}
-		
-		this._get_table_schema(layer_id, function(structure) {
-			var source = new Array();
-			var columns = new Object();
-			for(var i=0; i<structure.length; i++) {
-				columns[structure[i]['name']] = structure[i]['id'];
-				source[structure[i]['name']] = '';
-			}
-			_data_popup_window_props._columns_mapping = columns;
-			_data_popup_window_props.source = source;
-			
-			_data_popup_window.show();
-		});
 	},
-	show_edit: function(layer_id, row_id, callback) {
-		
-	},
-	_get_table_schema: function(layer_id, callback) {
+	load_data: function(layer_id, data) {
 		var schema_store = this._schema_store;
 		if(!schema_store) {
 			schema_store = new Object();
 		}
 		
+		var _this = this;
+		
 		if(schema_store.hasOwnProperty(layer_id)) {
-			callback(schema_store[layer_id]);
+			this._load_schema(schema_store[layer_id], data);
 		} else {
 			$.getJSON("/ajax/workspace/get-layer-schema/", {layer_id:layer_id}, function(result) {
 				schema_store[layer_id] = result;
-				callback(result);
+				_this._load_schema(result, data);
 			});
 		}
+	},
+	_load_schema: function(schema, data) {
+		var propertyNames = new Object();
+		var source = new Object();
+		
+		for(var i=0; i<schema.length; i++) {
+			propertyNames[''+schema[i]['id']] = schema[i]['name'];
+			if(data != undefined) {
+				source[''+schema[i]['id']] = data[schema[i]['id']];
+			} else {
+				source[''+schema[i]['id']] = '';
+			}
+		}
+		
+		_data_popup_window_props.propertyNames = propertyNames;
+		_data_popup_window_props.source = source;
+		
+		_data_popup_window.show();
 	}
 };
-
-var _dataInfoWindow;
-
-function initializeDataInfoWindow() {
-	var propsGrid = new Ext.grid.PropertyGrid({
-		width: 300,
-		border: false,
-		autoHeight: false,
-		source: {
-			data1: 'Data 1',
-			data2: 'Data 2'
-		},
-		viewConfig : {
-			forceFit: true,
-			scrollOffset: 2 // the grid will never have scrollbars
-		}
-	});
-	
-	_dataInfoWindow = new Ext.Window({
-		layout: 'fit',
-		title: 'Data Window',
-		width: 250,
-		height: 400,
-		closeAction: 'hide',
-		items: propsGrid
-	});
-}
-
-function openDataInfoWindow(layer_id, row_id) {
-	var propsGrid = new Ext.grid.PropertyGrid({
-		width: 300,
-		border: false,
-		autoHeight: false,
-		source: {
-			data1: 'Data 1',
-			data2: 'Data 2'
-		},
-		viewConfig : {
-			forceFit: true,
-			scrollOffset: 2 // the grid will never have scrollbars
-		}
-	});
-	
-	_dataInfoWindow = new Ext.Window({
-		layout: 'fit',
-		title: 'Data Window',
-		width: 250,
-		height: 400,
-		closeAction: 'hide',
-		items: propsGrid
-	});
-}
 
 /*
 BASE MAP SELECTOR **********************************************************************************************************
@@ -140,7 +101,8 @@ function initializeBaseMapSelection() {
 	var store = new Ext.data.ArrayStore({
 		fields: ['code', 'name'],
 		data : [
-			['google', 'Google Map'],
+			['google_map', 'Google Map - Normal'],
+			['google_sat', 'Google Map - Hybrid'],
 			['osm', 'Open Street Map']
 		]
 	});
@@ -155,7 +117,7 @@ function initializeBaseMapSelection() {
 		items:[new Ext.form.ComboBox({
 			displayField:'name',
 			valueField:'code',
-			value:'google',
+			value:'google_sat',
 			editable: false,
 			forceSelection:true,
 			mode: 'local',
@@ -180,7 +142,6 @@ var _manageLayersWindow;
 
 function initializeAddLayerWindow() {
 	if(!_addLayerWindow) {
-		
 		var sm = new Ext.grid.CheckboxSelectionModel({singleSelect:true});
 		
 		var store = new Ext.data.Store({
@@ -189,7 +150,10 @@ function initializeAddLayerWindow() {
 			reader: new Ext.data.JsonReader(),
 			listeners: {
 				'load': function(store, records, options) {
-					_addLayerWindow.buttons[0].disable();
+					if(records.length == 0) {
+						Ext.MessageBox.alert('Available Layer Not Found', 'There is no available layer to be added.');
+						_addLayerWindow.hide();
+					}
 				}
 			}
 		});
@@ -218,6 +182,12 @@ function initializeAddLayerWindow() {
 			height: 250,
 			closeAction: 'hide',
 			items: grid,
+			listeners:{
+				'show':function(t) {
+					sm.clearSelections();
+					_addLayerWindow.buttons[0].disable();
+				}
+			},
 			buttons: [{
 				text:'Add',
 				handler: function(b, e) {
@@ -230,39 +200,32 @@ function initializeAddLayerWindow() {
 								method: 'GET',
 								success: function(response, opts) {
 									var response_json = Ext.util.JSON.decode(response.responseText);
+									var layer_id = response_json['id'];
 									
-									var LayerRecord = Ext.data.Record.create({name: 'id'},{name: 'name'},{name: 'source_name'},{name: 'spatial_type'},{name: 'is_modified'},{name: 'is_editing'},{name: 'is_show'});
+									_addLayerWindow.hide();
+									
+									// ADD to Layer Panel
+									var LayerRecord = Ext.data.Record.create({name: 'id'},{name: 'name'},{name: 'source_name'},{name: 'spatial_type'},{name: 'is_modified', type: 'boolean'},{name: 'is_editing', type: 'boolean'},{name: 'is_show', type: 'boolean'});
 									var record = new LayerRecord({
-										id: response_json['id'],
+										id: layer_id,
 										name: text,
 										source_name: response_json['source_name'],
 										spatial_type: response_json['spatial_type'],
 										is_modified: false,
 										is_editing: false,
 										is_show: true
-									});
+									}, layer_id);
 									
 									var layerPanel = Ext.getCmp('workspace-layer-panel');
-									layerPanel.store.add(record);
+									layerPanel.store.add([record]);
 									
-									_addLayerWindow.hide();
-									
-									// Load spatial data and show on map
+									// ADD to Map Panel
 									var mapPanel = Ext.getCmp('workspace-map-panel');
-									mapPanel.showLayer(response_json['id']);
+									mapPanel.addLayer(layer_id);
 									
-									// Load data and show on grid
-									var dataTabPanel = Ext.getCmp('workspace-data-panel');
-									dataTabPanel.add({
-										id:'data-panel-tab-' + response_json['id'],
-										title:text,
-										layout:'fit',
-										layer_id:response_json['id'],
-										items:[{
-											xtype:'layer_data_grid',
-											layer_id:response_json['id']
-										}]
-									});
+									// ADD to Data Panel
+									var dataPanel = Ext.getCmp('workspace-data-panel');
+									dataPanel.addLayer(layer_id, text);
 								},
 								failure: function(response, opts) {},
 								params: 'workspace_id='+_workspace_id+'&layer_name='+text+'&table_id='+table_id
@@ -287,17 +250,9 @@ function initializeAddLayerWindow() {
 function initializeManageLayersWindow() {
 	if(!_manageLayersWindow) {
 		var store = new Ext.data.ArrayStore({
-			fields: [{name: 'layer_id'},{name: 'layer_name'},{name: 'source_name'}]
+			idIndex:0,
+			fields: [{name: 'id'},{name: 'name'},{name: 'source_name'}]
 		});
-		
-		var layerPanel = Ext.getCmp('workspace-layer-panel');
-		
-		var layerData = new Array();
-		layerPanel.store.each(function(record) {
-			layerData.push([record.data['id'], record.data['name'], record.data['source_name']]);
-		});
-		
-		store.loadData(layerData);
 		
 		var sm = new Ext.grid.CheckboxSelectionModel();
 		
@@ -305,12 +260,74 @@ function initializeManageLayersWindow() {
 			border:false,
 			store:store,
 			selModel:sm,
-			tbar: [{text:'Rename'},{text:'Delete'},'-',{text:'Move Up'},{text:'Move Down'}],
+			tbar: [{
+				text:'Rename', handler: function(b, e) {
+					Ext.MessageBox.prompt('Layer Name', 'Layer name:', function(btn, text) {
+						if(btn == 'ok') {
+							Ext.Ajax.request({
+								url: '/ajax/workspace/rename-layer/',
+								method: 'POST',
+								success: function(response, opts) {
+									var layer_id = sm.getSelected().data['id'];
+									
+									var layerPanel = Ext.getCmp('workspace-layer-panel');
+									layerPanel.store.getById(layer_id).set('name', text);
+									layerPanel.render();
+									
+									store.getById(layer_id).set('name', text);
+									grid.render();
+									
+									var dataPanel = Ext.getCmp('workspace-data-panel');
+									dataPanel.renameLayer(layer_id, text);
+								},
+								failure: function(response, opts) {},
+								params: 'layer_id=' + sm.getSelected().data['id'] + '&layer_name='+text
+							});
+						}
+					}, this, false, sm.getSelected().data['name']);
+				}
+			},{
+				text:'Delete', handler: function(b, e) {
+					Ext.MessageBox.confirm('Delete Confirmation', 'Really want to delete this layer?', function(btn) {
+						if(btn == 'yes') {
+							Ext.Ajax.request({
+								url: '/ajax/workspace/delete-layer/',
+								method: 'POST',
+								success: function(response, opts) {
+									var layer_id = sm.getSelected().data['id'];
+									
+									var layerPanel = Ext.getCmp('workspace-layer-panel');
+									layerPanel.store.remove(layerPanel.store.getById(layer_id));
+									
+									store.remove(store.getById(layer_id));
+									
+									// Remove from map panel
+									var mapPanel = Ext.getCmp('workspace-map-panel');
+									mapPanel.removeLayer(layer_id);
+									
+									// Remove from data panel
+									var dataPanel = Ext.getCmp('workspace-data-panel');
+									dataPanel.removeLayer(layer_id);
+								},
+								failure: function(response, opts) {},
+								params: 'layer_id=' + sm.getSelected().data['id']
+							});
+						}
+					});
+				}
+			}],
 			columns:[
-				{id:'layer_name', header:'Layer Name', dataIndex:'layer_name'},
+				{id:'name', header:'Layer Name', dataIndex:'name'},
 				{id:'source_name', header:'Source', dataIndex:'source_name'}
 			],
-			autoExpandColumn: 'source_name'
+			autoExpandColumn: 'source_name',
+			listeners: {
+				'rowclick':function() {
+					for(var i=0; i<grid.getTopToolbar().items.items.length; i++) {
+						grid.getTopToolbar().items.items[i].enable();
+					}
+				}
+			}
 		});
 		
 		_manageLayersWindow = new Ext.Window({
@@ -320,7 +337,30 @@ function initializeManageLayersWindow() {
 			width: 500,
 			height: 250,
 			closeAction: 'hide',
-			items: grid
+			items: grid,
+			listeners:{
+				'show':function(t) {
+					var layerPanel = Ext.getCmp('workspace-layer-panel');
+					
+					var layerData = new Array();
+					layerPanel.store.each(function(record) {
+						layerData.push([record.data['id'], record.data['name'], record.data['source_name']]);
+					});
+					
+					store.loadData(layerData);
+					
+					sm.clearSelections();
+					for(var i=0; i<grid.getTopToolbar().items.items.length; i++) {
+						grid.getTopToolbar().items.items[i].disable();
+					}
+				}
+			},
+			buttons: [{
+				text:'Close',
+				handler: function(b, e) {
+					_manageLayersWindow.hide();
+				}
+			}]
 		});
 	}
 	return _manageLayersWindow;
@@ -328,6 +368,7 @@ function initializeManageLayersWindow() {
 
 function initializeLayersPanel(preloaded_layers) {
 	var store = new Ext.data.ArrayStore({
+		idIndex:0,
 		fields: [{name: 'id'},{name: 'name'},{name: 'source_name'},{name: 'spatial_type'},{name: 'is_modified', type: 'boolean'},{name: 'is_editing', type: 'boolean'},{name: 'is_show', type: 'boolean'}]
 	});
 	
@@ -371,6 +412,15 @@ function initializeLayersPanel(preloaded_layers) {
 					var layer_id = store_item.get('id');
 					var spatial_type = store_item.get('spatial_type');
 					
+					// TOGGLE LAYER
+					if(e.getTarget(".show_layer", node)) {
+						var mapPanel = Ext.getCmp('workspace-map-panel');
+						var dataPanel = Ext.getCmp('workspace-data-panel');
+						
+						mapPanel.toggleLayer(layer_id, e.target.checked);
+						dataPanel.toggleLayer(layer_id, e.target.checked);
+					}
+					
 					// EDIT LAYER DATA
 					if(e.getTarget(".edit_geometry", node)) {
 						e.preventDefault();
@@ -382,14 +432,16 @@ function initializeLayersPanel(preloaded_layers) {
 						t.render();
 						
 						var mapPanel = Ext.getCmp('workspace-map-panel');
-						mapPanel.enterEditMode(layer_id, spatial_type,
-						function() { // Dirty Callback
+						mapPanel.enterEditMode(layer_id, spatial_type, function() { // Dirty Callback
 							store_item.set('is_modified', true);
 							t.render();
 						});
 						
-						$(".layer_item .edit_checkbox").attr("checked", false);
-						e.getTarget().checked = true;
+						$(".layer_item .show_layer").attr("checked", true);
+						mapPanel.toggleLayer(layer_id, true);
+						
+						var dataPanel = Ext.getCmp('workspace-data-panel');
+						dataPanel.toggleLayer(layer_id, true);
 					}
 					
 					// EXIT EDIT MODE
@@ -415,7 +467,7 @@ function initializeLayersPanel(preloaded_layers) {
 							rows_query_string = rows_query_string + '&row=' + features[i].id + ',' + features[i].wkt;
 						}
 						
-						$.ajax({type:"POST", url:"/ajax/workspace/save-layer-geo-data/", processData:false,
+						$.ajax({type:"POST", url:"/ajax/workspace/update-layer-row-spatial/", processData:false,
 							data: "layer_id=" + layer_id + rows_query_string,
 							success: function(msg){
 								store_item.set('is_modified', false);
@@ -450,7 +502,6 @@ DATA GRID PANEL ****************************************************************
 */
 
 var _dataGridRowMenu;
-var _dataGridRowMenuRowIndex;
 
 LayerDataPanel = Ext.extend(Ext.TabPanel, {
 	initComponent : function() {
@@ -464,6 +515,7 @@ LayerDataPanel = Ext.extend(Ext.TabPanel, {
 					layout:'fit',
 					layer_id:this.preloaded_layers[i][0],
 					items:[{
+						id: 'data-panel-grid-' + this.preloaded_layers[i][0],
 						xtype:'layer_data_grid',
 						layer_id:this.preloaded_layers[i][0]
 					}]
@@ -481,56 +533,88 @@ LayerDataPanel = Ext.extend(Ext.TabPanel, {
 		Ext.applyIf(this,defConfig);
 		LayerDataPanel.superclass.initComponent.call(this);
 	},
-	afterRender : function() {
-		LayerDataPanel.superclass.afterRender.call(this);
-	},
-	showLayer: function(layer_id, layer_name) {
-		var _this = this;
+	
+	addLayer: function(layer_id, layer_name) {
 		var item = Ext.getCmp('data-panel-tab-' + layer_id);
 		
-		if(item == null) {
-			item = _this.add({
-				id:'data-panel-tab-' + layer_id,
-				title:layer_name,
-				layout:'fit',
-				layer_id:layer_id,
-				items:[{
-					xtype:'layer_data_grid',
-					layer_id:layer_id
-				}]
-			});
-		} else {
-			_this.unhideTabStripItem(item);
-			item.show();
+		if(item != undefined) {
+			item.destroy();
 		}
 		
-		_this.setActiveTab(item);
-		
-		if(Ext.getCmp('workspace-data-panel-container').hidden) {
-			Ext.getCmp('workspace-data-panel-container').show();
-			Ext.getCmp('workspace-data-panel-container').ownerCt.doLayout();
-		}
-	},
-	hideLayer: function(layer_id) {
-		var _this = this;
-		var item = Ext.getCmp('data-panel-tab-' + layer_id);
-		
-		_this.hideTabStripItem(item);
-		item.hide();
-		
-		var visibleItems = 0;
-		Ext.each(this.items.items, function(item) {
-			var el = _this.getTabEl(item);
-			if(el.style.display != 'none') {
-				visibleItems = visibleItems + 1;
-				_this.setActiveTab(item);
-			}
+		this.add({
+			id: 'data-panel-tab-' + layer_id,
+			title: layer_name,
+			layout: 'fit',
+			layer_id: layer_id,
+			items: [{
+				id: 'data-panel-grid-' + layer_id,
+				xtype: 'layer_data_grid',
+				layer_id: layer_id
+			}]
 		});
-		
-		if(visibleItems == 0) {
-			Ext.getCmp('workspace-data-panel-container').hide();
-			Ext.getCmp('workspace-data-panel-container').ownerCt.doLayout();
+	},
+	renameLayer: function(layer_id, layer_name) {
+		var item = Ext.getCmp('data-panel-tab-' + layer_id);
+		item.setTitle(layer_name);
+	},
+	removeLayer: function(layer_id) {
+		var item = Ext.getCmp('data-panel-tab-' + layer_id);
+		if(item != undefined) {
+			item.destroy();
 		}
+	},
+	toggleLayer: function(layer_id, visibility) {
+		var _this = this;
+		var item = Ext.getCmp('data-panel-tab-' + layer_id);
+		
+		if(item != undefined) {
+			if(visibility) {
+				_this.unhideTabStripItem(item);
+				item.show();
+				
+				_this.setActiveTab(item);
+				
+				if(Ext.getCmp('workspace-data-panel-container').hidden) {
+					Ext.getCmp('workspace-data-panel-container').show();
+					Ext.getCmp('workspace-data-panel-container').ownerCt.doLayout();
+				}
+				
+			} else {
+				_this.hideTabStripItem(item);
+				item.hide();
+				
+				var visibleItems = 0;
+				Ext.each(this.items.items, function(item) {
+					var el = _this.getTabEl(item);
+					if(el.style.display != 'none') {
+						visibleItems = visibleItems + 1;
+						_this.setActiveTab(item);
+					}
+				});
+				
+				if(visibleItems == 0) {
+					Ext.getCmp('workspace-data-panel-container').hide();
+					Ext.getCmp('workspace-data-panel-container').ownerCt.doLayout();
+				}
+			}
+		}
+	},
+	addLayerRow: function(layer_id, row_id, data) {
+		var grid = Ext.getCmp('data-panel-grid-' + layer_id);
+		var record = new grid.store.recordType(data, row_id);
+		grid.store.insert(0, record);
+	},
+	updateLayerRow: function(layer_id, row_id, data) {
+		var grid = Ext.getCmp('data-panel-grid-' + layer_id);
+		var record = grid.store.getById(row_id);
+		
+		for(key in data) {
+			record.set(key, data[key]);
+		}
+	},
+	deleteLayerRow: function(layer_id, row_id) {
+		var grid = Ext.getCmp('data-panel-grid-' + layer_id);
+		grid.store.remove(grid.store.getById(row_id));
 	}
 });
 Ext.reg('layer_data_panel', LayerDataPanel);
@@ -551,16 +635,6 @@ LayerDataGrid = Ext.extend(Ext.grid.GridPanel, {
 		};
 		Ext.apply(this, defConfig);
 		
-		var _layer_id = this.layer_id;
-		this.addListener('cellclick', function(grid, rowIndex, columnIndex, e) {
-			if(columnIndex == 0) {
-				var feature_id = grid.getStore().getAt(rowIndex).id;
-				
-				var mapPanel = Ext.getCmp('workspace-map-panel');
-				mapPanel.focusLayerFeature(_layer_id, feature_id);
-			}
-		});
-		
 		LayerDataGrid.superclass.initComponent.call(this);
 	},
 	afterRender : function(){
@@ -578,32 +652,62 @@ LayerDataGrid = Ext.extend(Ext.grid.GridPanel, {
 		LayerDataGrid.superclass.afterRender.call(this);
 	},
 	listeners: {
+		'cellclick': function(grid, rowIndex, columnIndex, e) {
+			var mapPanel = Ext.getCmp('workspace-map-panel');
+			
+			mapPanel.showFeaturePopup(grid.layer_id, grid.getStore().getAt(rowIndex).id, grid.getStore().getAt(rowIndex).data, grid.getColumnModel().config);
+		},
 		'rowdblclick': function(grid, rowIndex, e)  {
-			// TODO: Center to this geometry
+			this._edit_row(grid, rowIndex);
 		},
 		'rowcontextmenu': function(grid, rowIndex, e) {
 			e.preventDefault();
+			var _this = this;
 			
 			if(!_dataGridRowMenu) {
 				_dataGridRowMenu = new Ext.menu.Menu({
-					items: [
-						{text: 'Data Popup', handler: function(item) {
-							initializeDataInfoWindow();
-							
-							_dataInfoWindow.show();
-							
-							// TODO: Show data popup
-						}},'-',
-						{text: 'Delete', handler: function(item) {
-							// TODO: Delete row
-						}}
-					]
+					items: [{
+						text: 'Edit', handler: function(item) {
+							_this._edit_row(grid, rowIndex);
+						}
+					}, {
+						text: 'Delete', handler: function(item) {
+							Ext.MessageBox.confirm('Delete Confirmation', 'Really want to delete this row?', function(btn) {
+								if(btn == 'yes') {
+									Ext.Ajax.request({
+										url: '/ajax/workspace/delete-layer-row/',
+										method: 'POST',
+										success: function(response, opts) {
+											var dataPanel = Ext.getCmp('workspace-data-panel');
+											dataPanel.deleteLayerRow(grid.layer_id, grid.getStore().getAt(rowIndex).id);
+										},
+										failure: function(response, opts) {},
+										params: 'layer_id=' + grid.layer_id + '&row_id=' + grid.getStore().getAt(rowIndex).id
+									});
+								}
+							});
+						}
+					}]
 				});
 			}
 			
-			_dataGridRowMenuRowIndex = rowIndex;
 			_dataGridRowMenu.showAt(e.getXY());
 		}
+	},
+	_edit_row: function(grid, rowIndex) {
+		_data_popup_windows.show_edit(grid.layer_id, grid.getStore().getAt(rowIndex).data, function(data, _data_popup_window) {
+			data['layer_id'] = grid.layer_id;
+			data['row_id'] = grid.getStore().getAt(rowIndex).id;
+			
+			$.post("/ajax/workspace/update-layer-row/", data, function(result) {
+				var dataPanel = Ext.getCmp('workspace-data-panel');
+				dataPanel.updateLayerRow(grid.layer_id, grid.getStore().getAt(rowIndex).id, data);
+				
+				_data_popup_window.hide();
+			});
+		}, function(_data_popup_window) {
+			_data_popup_window.hide();
+		});
 	}
 });
 Ext.reg('layer_data_grid', LayerDataGrid);
@@ -620,11 +724,7 @@ function initializeDataPanel(preloaded_layers) {
 			xtype:'layer_data_panel',
 			id: 'workspace-data-panel',
 			region:'center',
-			preloaded_layers: preloaded_layers,
-			callWhenDataAdded: function(layer_id, data) {
-				// TODO: Add new data to store
-				//console.log('callWhenDataAdded');
-			}
+			preloaded_layers: preloaded_layers
 		}]
 	}
 }

@@ -4,6 +4,7 @@ _base = os.path.dirname(__file__)
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
+##FORCE_SCRIPT_NAME = '/opengis'
 WEBSITE_ADDRESS = 'localhost:8000'
 
 ADMINS = (
@@ -30,6 +31,7 @@ USE_I18N = True
 
 MEDIA_ROOT = os.path.join(_base, "media") + "/"
 MEDIA_URL = '/m'
+##MEDIA_URL = '/om'
 ADMIN_MEDIA_PREFIX = '/media/'
 
 # Make this unique, and don't share it with anybody.

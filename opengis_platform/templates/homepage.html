@@ -1,5 +1,5 @@
 {% extends 'page_base.html' %}
 
 {% block page_content %}
-<a href="/accounts/login/">Login</a> | <a href="/accounts/register/">Register</a>
+<a href="{% url django.contrib.auth.views.login %}">Login</a> | <a href="#">Register</a>
 {% endblock %}

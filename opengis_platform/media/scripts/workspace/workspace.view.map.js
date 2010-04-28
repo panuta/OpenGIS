@@ -191,6 +191,12 @@ OpenLayersMapPanel = Ext.extend(Ext.Panel, {
 		this.map.getLayer(layer_id).setVisibility(visibility);
 	},
 	
+	deleteLayerFeature: function(layer_id, row_id) {
+		var feature = this._get_layer(layer_id)['vector'].getFeatureById(row_id);
+		this._get_layer(layer_id)['vector'].removeFeatures([feature]);
+		this.map.removePopup(this.popup);
+	},
+	
 	showFeaturePopup: function(layer_id, feature_id, data, columnNames) {
 		var feature = this._get_layer(layer_id)['vector'].getFeatureById(feature_id);
 		var point = feature.geometry.getCentroid();
@@ -216,23 +222,6 @@ OpenLayersMapPanel = Ext.extend(Ext.Panel, {
 		}
 		
 		return features;
-	},
-	
-	focusLayerFeature: function(layer_id, feature_id, data) {
-		var feature = this._get_layer(layer_id)['vector'].getFeatureById(feature_id);
-		var point = feature.geometry.getCentroid();
-		
-		if(this.popup != undefined && this.popup != null) this.map.removePopup(this.popup);
-		
-		this.popup = new OpenLayers.Popup.FramedCloud(
-			"feature_info",
-			new OpenLayers.LonLat(point.x, point.y),
-			new OpenLayers.Size(50,50),
-			"example popup",
-			null,
-			true);
-		
-		this.map.addPopup(this.popup);
 	},
 	
 	/*

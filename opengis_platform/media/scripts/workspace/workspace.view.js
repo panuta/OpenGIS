@@ -87,7 +87,7 @@ var _data_popup_windows = {
 		}
 		
 		_data_popup_window_props.propertyNames = propertyNames;
-		_data_popup_window_props.source = source;
+		_data_popup_window_props.setSource(source);
 		
 		_data_popup_window.show();
 	}
@@ -668,10 +668,13 @@ LayerDataGrid = Ext.extend(Ext.grid.GridPanel, {
 				_dataGridRowMenu = new Ext.menu.Menu({
 					items: [{
 						text: 'Edit', handler: function(item) {
-							_this._edit_row(grid, rowIndex);
+							_this._edit_row(_dataGridRowMenu._active_grid, _dataGridRowMenu._active_rowIndex);
 						}
 					}, {
 						text: 'Delete', handler: function(item) {
+							var layer_id = _dataGridRowMenu._active_grid.layer_id;
+							var row_id = grid.getStore().getAt(_dataGridRowMenu._active_rowIndex).id;
+							
 							Ext.MessageBox.confirm('Delete Confirmation', 'Really want to delete this row?', function(btn) {
 								if(btn == 'yes') {
 									Ext.Ajax.request({
@@ -679,10 +682,13 @@ LayerDataGrid = Ext.extend(Ext.grid.GridPanel, {
 										method: 'POST',
 										success: function(response, opts) {
 											var dataPanel = Ext.getCmp('workspace-data-panel');
-											dataPanel.deleteLayerRow(grid.layer_id, grid.getStore().getAt(rowIndex).id);
+											dataPanel.deleteLayerRow(layer_id, row_id);
+											
+											var mapPanel = Ext.getCmp('workspace-map-panel');
+											mapPanel.deleteLayerFeature(layer_id, row_id);
 										},
 										failure: function(response, opts) {},
-										params: 'layer_id=' + grid.layer_id + '&row_id=' + grid.getStore().getAt(rowIndex).id
+										params: 'layer_id=' + layer_id + '&row_id=' + row_id
 									});
 								}
 							});
@@ -692,6 +698,8 @@ LayerDataGrid = Ext.extend(Ext.grid.GridPanel, {
 			}
 			
 			_dataGridRowMenu.showAt(e.getXY());
+			_dataGridRowMenu._active_grid = grid;
+			_dataGridRowMenu._active_rowIndex = rowIndex;
 		}
 	},
 	_edit_row: function(grid, rowIndex) {
